@@ -46,10 +46,10 @@ func main() {
 		port = os.Getenv("PORT")
 	}
 
-	fmt.Println(">>>>>> Gopher Net <<<<<<")
+	fmt.Println("\n>>>>>> Gopher Net <<<<<<")
 	fmt.Println("\nlistening on port:", port)
 
-	l := log.New(os.Stdout, "Gopher Net ", log.LstdFlags)
+	l := log.New(os.Stdout, "Chirpy ", log.LstdFlags)
 
 	usersCache := data.NewCache()
 	err = usersCache.Init("users.json", &data.User{})
@@ -58,16 +58,23 @@ func main() {
 		l.Println(err)
 	}
 
-	hh := handlers.NewHello(l)
+
+	hh := handlers.NewHealthz(l)
+	rh := handlers.NewRoot(l)
 	uh := handlers.NewUsers(usersCache,l)
 
 	sm := http.NewServeMux()
-	sm.Handle("/", hh)
+	sm.Handle("/healthz", hh)
+	sm.Handle("/", rh)
 	sm.Handle("/user", uh)
+	const filepathRoot = "."
+	sm.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
+
+	corsSM := handlers.MiddlewareCors(sm)
 
 	s := &http.Server{
 		Addr: port,
-		Handler: sm,
+		Handler: corsSM,
 		IdleTimeout: 120*time.Second,
 		ReadTimeout: 1*time.Second,
 		WriteTimeout: 1*time.Second,
