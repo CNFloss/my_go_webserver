@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/CNFloss/my_go_webserver/api/data"
+	"github.com/CNFloss/my_go_webserver/internal/data"
 )
 
 type Users struct {

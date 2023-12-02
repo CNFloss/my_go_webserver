@@ -11,8 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CNFloss/my_go_webserver/api/data"
-	"github.com/CNFloss/my_go_webserver/api/handlers"
+	"github.com/CNFloss/my_go_webserver/internal/data"
+	"github.com/CNFloss/my_go_webserver/internal/handlers"
+	"github.com/CNFloss/my_go_webserver/internal/middleware"
 )
 
 func main() {
@@ -70,7 +71,7 @@ func main() {
 	const filepathRoot = "."
 	sm.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
 
-	corsSM := handlers.MiddlewareCors(sm)
+	corsSM := middleware.MiddlewareCors(sm)
 
 	s := &http.Server{
 		Addr: port,
