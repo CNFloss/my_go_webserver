@@ -59,6 +59,7 @@ func main() {
 		l.Println(err)
 	}
 
+	config := handlers.NewApiConfig(l)
 
 	hh := handlers.NewHealthz(l)
 	rh := handlers.NewRoot(l)
@@ -68,8 +69,10 @@ func main() {
 	sm.Handle("/healthz", hh)
 	sm.Handle("/", rh)
 	sm.Handle("/user", uh)
+	sm.Handle("/metrics", config)
+	sm.Handle("/reset", http.HandlerFunc(config.ResetHits))
 	const filepathRoot = "."
-	sm.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
+	sm.Handle("/app/", http.StripPrefix("/app", config.MiddlewareMetricsInc(http.FileServer(http.Dir(filepathRoot)))))
 
 	corsSM := middleware.MiddlewareCors(sm)
 
