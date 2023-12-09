@@ -14,6 +14,7 @@ import (
 	"github.com/CNFloss/my_go_webserver/internal/data"
 	"github.com/CNFloss/my_go_webserver/internal/handlers"
 	"github.com/CNFloss/my_go_webserver/internal/middleware"
+	"github.com/go-chi/chi/v5"
 )
 
 func main() {
@@ -65,16 +66,23 @@ func main() {
 	rh := handlers.NewRoot(l)
 	uh := handlers.NewUsers(usersCache,l)
 
-	sm := http.NewServeMux()
-	sm.Handle("/healthz", hh)
-	sm.Handle("/", rh)
-	sm.Handle("/user", uh)
-	sm.Handle("/metrics", config)
-	sm.Handle("/reset", http.HandlerFunc(config.ResetHits))
-	const filepathRoot = "."
-	sm.Handle("/app/", http.StripPrefix("/app", config.MiddlewareMetricsInc(http.FileServer(http.Dir(filepathRoot)))))
+	r := chi.NewRouter()
+	apiR := chi.NewRouter()
+	adminR := chi.NewRouter()
 
-	corsSM := middleware.MiddlewareCors(sm)
+	r.Handle("/", rh)
+	r.Handle("/user", uh)
+	apiR.Method(http.MethodGet, "/healthz", hh)
+	apiR.Method(http.MethodGet, "/reset", http.HandlerFunc(config.ResetHits))
+	adminR.Method(http.MethodGet, "/metrics", config)
+	const filepathRoot = "."
+	fileServerHandler := http.StripPrefix("/app", config.MiddlewareMetricsInc(http.FileServer(http.Dir(filepathRoot))))
+	r.Handle("/app/*", fileServerHandler)
+	r.Handle("/app", fileServerHandler)
+
+	corsSM := middleware.MiddlewareCors(r)
+	r.Mount("/api", apiR)
+	r.Mount("/admin", adminR)
 
 	s := &http.Server{
 		Addr: port,
